@@ -10,12 +10,17 @@ import string
 import random
 import sys
 import os
+from nltk.stem.wordnet import WordNetLemmatizer
+from stemming.porter2 import stem
+lmtzr = WordNetLemmatizer()
 
 class Category():
-    def __init__(self, name, links, token_list, articles):
+    def __init__(self, name, links, token_list, articles, test, train):
         self.name = name
         self.links = links
         self.token_list = token_list #a token is a sentence
+        self.test = test
+        self.train = train
         self.articles = articles
 
 categories = []
@@ -32,7 +37,7 @@ for dirname in os.listdir(data_dir):
             if category.name == filename.split('.')[0]:
                 category_exists = True
         if not category_exists:
-            new_category = Category(name = filename.split('.')[0], links = [], token_list = [], articles = [])
+            new_category = Category(name = filename.split('.')[0], links = [], token_list = [], articles = [], train = [], test = [])
             categories.append(new_category)
 
 #read tokens into category token lists
@@ -63,6 +68,14 @@ for category in categories:
         text = ' '.join([word for word in category.token_list[i].split() if word not in cachedStopWords])
         category.token_list[i] = text
 
+        '''#lemming - didn't improve accuracy as much
+        text = ' '.join([lmtzr.lemmatize(word) for word in category.token_list[i].split() if word not in cachedStopWords])
+        category.token_list[i] = text
+
+        #stemming - didn't improve accuracy as much (lost 1-2% per category)
+        text = ' '.join([stem(word) for word in category.token_list[i].split() if word not in cachedStopWords])
+        category.token_list[i] = text'''
+
         #remove sentences without at least 5 words
         if len(category.token_list[i].split()) < 5:
             #print ("removing: " + category.token_list[i])
@@ -74,18 +87,36 @@ for category in categories:
 for category in categories:
     random.shuffle(category.token_list)
 
+#find train and test sets for each category
+for category in categories:
+    c_length = len(category.token_list)
+    category.train = category.token_list[: int(.8 *c_length)]
+    category.test = category.token_list[int(.8 *c_length):c_length]
+
+#lets make entertainment smaller - we don't want it dominating the model
+'''for category in categories:
+    if category.name == "Entertainment and Arts":
+        print ("Entertainment: " + str(len(category.token_list)))
+maxt = 0
+for category in categories:
+    if len(category.token_list) > maxt and category.name != "Entertainment and Arts":
+        maxt = len(category.token_list)
+for category in categories:
+    if category.name == "Entertainment and Arts":
+        category.token_list = category.token_list[:maxt]
+        print ("Entertainment: " + str(len(category.token_list)))'''
+
 #Find train tokens from 80% of the token list per category
 x_train_tokens = []
 y_train_tags = []
 for category in categories:
-    c_length = len(category.token_list)
-    for i in range(0, int(c_length * .8)):
-        x_train_tokens.append(category.token_list[i])
+    for tok in category.train:
+        x_train_tokens.append(tok)
         y_train_tags.append([category.name])
 X_train = np.array(x_train_tokens)
 
 '''---------------------------------------------OneVsRestClassifier--------------------------------------'''
-print ("Results for OneVsRestClassifier")
+'''print ("Results for OneVsRestClassifier")
 mlb = MultiLabelBinarizer()
 Y = mlb.fit_transform(y_train_tags)
 classifier = Pipeline([
@@ -103,8 +134,8 @@ for category in categories:
         c_length = len(category.token_list)
         test_tokens = []
         Y_test = []
-        for i in range(int(c_length * .8), c_length):
-            test_tokens.append(category.token_list[i])
+        for tok in category.test:
+            test_tokens.append(tok)
             Y_test.append([category.name])
 
         #classify test tokens   
@@ -125,7 +156,7 @@ for category in categories:
 
     except:
         print(category.name + ": ERROR")
-print ('\n')
+print ('\n')'''
 
 '''---------------------------------------------OneVsOneClassifier--------------------------------------'''
 print ("Results for OneVsOneClassifier")
@@ -145,8 +176,8 @@ for category in categories:
         c_length = len(category.token_list)
         test_tokens = []
         Y_test = []
-        for i in range(int(c_length * .8), c_length):
-            test_tokens.append(category.token_list[i])
+        for tok in category.test:
+            test_tokens.append(tok)
             Y_test.append([category.name])
 
         #classify test tokens   
@@ -161,7 +192,7 @@ for category in categories:
 print('\n')
 
 '''-------------------------------------------Naives Bayes----------------------------------------------------'''
-print ("Results for Naive Bayes")
+'''print ("Results for Naive Bayes")
 from sklearn.feature_extraction.text import CountVectorizer
 count_vect = CountVectorizer()
 X_train_counts = count_vect.fit_transform(X_train)
@@ -180,9 +211,9 @@ for category in categories:
     c_length = len(category.token_list)
     test_tokens = []
     Y_test = []
-    for i in range(int(c_length * .8), c_length):
-        test_tokens.append(category.token_list[i])
-        Y_test.append([category.name])
+    for tok in category.test:
+            test_tokens.append(tok)
+            Y_test.append([category.name])
 
 
     X_new_counts = count_vect.transform(test_tokens)
@@ -192,10 +223,10 @@ for category in categories:
 
     #results
     print (category.name + ": " + str(np.mean(predicted == np.array(Y_test))))
-print ('\n')
+print ('\n')'''
 
 '''-------------------------------------------Support Vector Machine----------------------------------------------------'''
-print ("Results for Support Vector Machine")
+'''print ("Results for Support Vector Machine")
 from sklearn.linear_model import SGDClassifier
 text_clf = Pipeline([('vect', CountVectorizer()),
     ('tfidf', TfidfTransformer()),
@@ -210,11 +241,11 @@ for category in categories:
     c_length = len(category.token_list)
     test_tokens = []
     Y_test = []
-    for i in range(int(c_length * .8), c_length):
-        test_tokens.append(category.token_list[i])
-        Y_test.append([category.name])
+    for tok in category.test:
+            test_tokens.append(tok)
+            Y_test.append([category.name])
 
     predicted = text_clf.predict(test_tokens)
     
     #results
-    print (category.name + ": " + str(np.mean(predicted == np.array(Y_test))))
+    print (category.name + ": " + str(np.mean(predicted == np.array(Y_test))))'''

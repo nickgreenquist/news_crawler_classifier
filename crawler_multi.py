@@ -32,12 +32,12 @@ tech = Category(name = 'Tech', links = [], token_list = [], articles = [])
 
 #Sites with many links to seperate RSS feeds
 rss_links = []
-'''rss_links.append('https://www.reuters.com/tools/rss')
+rss_links.append('https://www.reuters.com/tools/rss')
 rss_links.append('http://www.cnn.com/services/rss/')
 rss_links.append('http://www.nbcnewyork.com/rss/')
 rss_links.append('http://abcnews.go.com/Site/page/rss--3520115')
 rss_links.append('https://www.wired.com/about/rss_feeds/')
-rss_links.append('http://www.bbc.com/news/10628494')'''
+rss_links.append('http://www.bbc.com/news/10628494')
 
 #loop through master RSS feed lists that grab all links from children rss links
 for rss_link in rss_links:
@@ -66,7 +66,7 @@ for rss_link in rss_links:
 #Add some standard rss links for specific categories
 #We are doing this becuase some master lists don't play nice when opened from above loop
 business.links.append('http://www.economist.com/sections/business-finance/rss.xml')
-'''business.links.append('http://nypost.com/business/feed/')
+business.links.append('http://nypost.com/business/feed/')
 business.links.append('https://www.cnbc.com/id/10001147/device/rss/rss.html')
 business.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Business.xml')
 business.links.append('http://rss.nytimes.com/services/xml/rss/nyt/SmallBusiness.xml')
@@ -103,7 +103,7 @@ tech.links.append('http://feeds.feedburner.com/TechCrunch/')
 tech.links.append('http://feeds.foxnews.com/foxnews/tech')
 tech.links.append('https://www.cnbc.com/id/19854910/device/rss/rss.html')
 tech.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Technology.xml')
-tech.links.append('http://rss.nytimes.com/services/xml/rss/nyt/PersonalTech.xml')'''
+tech.links.append('http://rss.nytimes.com/services/xml/rss/nyt/PersonalTech.xml')
 
 categories.append(business)
 categories.append(entertainment_art)

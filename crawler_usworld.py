@@ -26,7 +26,7 @@ us = Category(name = 'US', links = [], token_list = [], articles = [])
 world = Category(name = 'World', links = [], token_list = [], articles = [])
 
 us.links.append('http://rss.cnn.com/rss/cnn_us.rss')
-'''us.links.append('http://feeds.reuters.com/Reuters/domesticNews')
+us.links.append('http://feeds.reuters.com/Reuters/domesticNews')
 us.links.append('http://rss.nytimes.com/services/xml/rss/nyt/US.xml')
 us.links.append('http://abcnews.go.com/abcnews/usheadlines')
 us.links.append('http://feeds.foxnews.com/foxnews/national')
@@ -37,7 +37,7 @@ world.links.append('http://feeds.reuters.com/Reuters/worldNews')
 world.links.append('http://rss.nytimes.com/services/xml/rss/nyt/World.xml')
 world.links.append('http://abcnews.go.com/abcnews/internationalheadlines')
 world.links.append('http://feeds.foxnews.com/foxnews/world')
-world.links.append('https://www.cnbc.com/id/100727362/device/rss/rss.html')'''
+world.links.append('https://www.cnbc.com/id/100727362/device/rss/rss.html')
 
 categories.append(us)
 categories.append(world)
