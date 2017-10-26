@@ -10,6 +10,7 @@ import string
 import random
 import sys
 import os
+import re
 from nltk.stem.wordnet import WordNetLemmatizer
 from stemming.porter2 import stem
 lmtzr = WordNetLemmatizer()
@@ -31,56 +32,57 @@ if len(sys.argv) > 1:
     data_dir = os.getcwd() + '/' + sys.argv[1]
 for dirname in os.listdir(data_dir):
     for filename in os.listdir(data_dir + "/" + dirname):
-        #create new category if needed
-        category_exists = False
-        for category in categories:
-            if category.name == filename.split('.')[0]:
-                category_exists = True
-        if not category_exists:
-            new_category = Category(name = filename.split('.')[0], links = [], token_list = [], articles = [], train = [], test = [])
-            categories.append(new_category)
+        if 'articles' in filename:
+            #create new category if needed
+            category_exists = False
+            for category in categories:
+                if category.name == filename.split('.')[0]:
+                    category_exists = True
+            if not category_exists:
+                new_category = Category(name = filename.split('.')[0], links = [], token_list = [], articles = [], train = [], test = [])
+                categories.append(new_category)
 
 #read tokens into category token lists
-total_sentences = 0
+total_articles = 0
 for category in categories:
     for dirname in os.listdir(data_dir):
         file = open((data_dir + "/" + dirname + "/" + category.name + ".txt"),"r") 
         for line in file: 
             #must contain letters and be longer than 5 characters long
             if any(c.isalpha()for c in line) and len(line) > 5:
-                total_sentences += 1
-                category.token_list.append(line)
+                total_articles += 1
+
+                article = line.split(":::::")
+                category.token_list.append(article[1])
+                print(article[0])
         file.close()
-print ("Total Sentences: " + str(total_sentences))
+print ("Total Articles: " + str(total_articles))
 print ('\n')
 
 #trim out dataset
 cachedStopWords = stopwords.words("english")
 for category in categories:
+    newList = []
     i = 0
     while i < len(category.token_list):
         category.token_list[i] = category.token_list[i].lower()
 
+        #remove easy punctation
+        category.token_list[i] = re.sub(r"[,.;@#?!&$-]+\ *", " ", category.token_list[i])   
+
         #remove punctuation
-        category.token_list[i] = "".join(l for l in category.token_list[i] if l not in string.punctuation)
+        category.token_list[i] = "".join(l for l in category.token_list[i] if l not in string.punctuation)   
+
+        category.token_list[i] = re.sub('\s+',' ',category.token_list[i])
 
         #remove stop words
         text = ' '.join([word for word in category.token_list[i].split() if word not in cachedStopWords])
         category.token_list[i] = text
 
-        '''#lemming - didn't improve accuracy as much
-        text = ' '.join([lmtzr.lemmatize(word) for word in category.token_list[i].split() if word not in cachedStopWords])
-        category.token_list[i] = text
-
-        #stemming - didn't improve accuracy as much (lost 1-2% per category)
-        text = ' '.join([stem(word) for word in category.token_list[i].split() if word not in cachedStopWords])
-        category.token_list[i] = text'''
-
-        #remove sentences without at least 5 words
+        '''#remove sentences without at least 5 words
         if len(category.token_list[i].split()) < 5:
             #print ("removing: " + category.token_list[i])
-            del category.token_list[i]
-
+            del category.token_list[i]'''
         i += 1
 
 #shuffle arrays
@@ -192,7 +194,7 @@ for category in categories:
 print('\n')
 
 '''-------------------------------------------Naives Bayes----------------------------------------------------'''
-'''print ("Results for Naive Bayes")
+print ("Results for Naive Bayes")
 from sklearn.feature_extraction.text import CountVectorizer
 count_vect = CountVectorizer()
 X_train_counts = count_vect.fit_transform(X_train)
@@ -223,10 +225,10 @@ for category in categories:
 
     #results
     print (category.name + ": " + str(np.mean(predicted == np.array(Y_test))))
-print ('\n')'''
+print ('\n')
 
 '''-------------------------------------------Support Vector Machine----------------------------------------------------'''
-'''print ("Results for Support Vector Machine")
+print ("Results for Support Vector Machine")
 from sklearn.linear_model import SGDClassifier
 text_clf = Pipeline([('vect', CountVectorizer()),
     ('tfidf', TfidfTransformer()),
@@ -248,4 +250,4 @@ for category in categories:
     predicted = text_clf.predict(test_tokens)
     
     #results
-    print (category.name + ": " + str(np.mean(predicted == np.array(Y_test))))'''
+    print (category.name + ": " + str(np.mean(predicted == np.array(Y_test))))
