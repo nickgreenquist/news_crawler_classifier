@@ -43,8 +43,9 @@ categories = []
 
 business = Category(name = 'Business', links = [], token_list = [], articles = [])
 entertainment_art = Category(name = 'Entertainment and Arts', links = [], token_list = [], articles = [])
+health = Category(name = 'Health', links = [], token_list = [], articles = [])
 politics = Category(name = 'Politics', links = [], token_list = [], articles = [])
-science_health = Category(name = 'Science and Health', links = [], token_list = [], articles = [])
+science = Category(name = 'Science', links = [], token_list = [], articles = [])
 sports = Category(name = 'Sports', links = [], token_list = [], articles = [])
 tech = Category(name = 'Tech', links = [], token_list = [], articles = [])
 
@@ -59,7 +60,7 @@ rss_links.append('http://www.bbc.com/news/10628494')
 
 #Add some standard rss links for specific categories
 #We are doing this becuase some master lists don't play nice when opened from above loop
-business.links.append('http://www.economist.com/sections/business-finance/rss.xml')
+'''business.links.append('http://www.economist.com/sections/business-finance/rss.xml')
 business.links.append('http://nypost.com/business/feed/')
 business.links.append('https://www.cnbc.com/id/10001147/device/rss/rss.html')
 business.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Business.xml')
@@ -72,24 +73,25 @@ entertainment_art.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Arts
 entertainment_art.links.append('http://rss.nytimes.com/services/xml/rss/nyt/ArtandDesign.xml')
 entertainment_art.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Movies.xml')
 entertainment_art.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Theater.xml')
-entertainment_art.links.append('https://rss.upi.com/news/entertainment_news.rss')
+entertainment_art.links.append('https://rss.upi.com/news/entertainment_news.rss')'''
 
-politics.links.append('http://feeds.foxnews.com/foxnews/politics')
+health.links.append('http://feeds.foxnews.com/foxnews/health')
+health.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Health.xml')
+health.links.append('https://rss.upi.com/news/health_news.rss')
+
+'''politics.links.append('http://feeds.foxnews.com/foxnews/politics')
 politics.links.append('https://www.cnbc.com/id/10000113/device/rss/rss.html')
 politics.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Politics.xml')
 politics.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Upshot.xml')
-politics.links.append('http://feeds.washingtonpost.com/rss/politics')
+politics.links.append('http://feeds.washingtonpost.com/rss/politics')'''
 
-science_health.links.append('http://feeds.foxnews.com/foxnews/science')
-science_health.links.append('http://feeds.foxnews.com/foxnews/health')
-science_health.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Science.xml')
-science_health.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Health.xml')
-science_health.links.append('https://rss.upi.com/news/science_news.rss')
-science_health.links.append('https://rss.upi.com/news/health_news.rss')
-science_health.links.append('http://feeds.latimes.com/latimes/news/science')
-science_health.links.append('http://rss.sciam.com/ScientificAmerican-News')
+science.links.append('http://feeds.foxnews.com/foxnews/science')
+science.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Science.xml')
+science.links.append('https://rss.upi.com/news/science_news.rss')
+science.links.append('http://feeds.latimes.com/latimes/news/science')
+science.links.append('http://rss.sciam.com/ScientificAmerican-News')
 
-sports.links.append('http://feeds.foxnews.com/foxnews/sports')
+'''sports.links.append('http://feeds.foxnews.com/foxnews/sports')
 sports.links.append('http://www.espn.com/espn/rss/news')
 sports.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Sports.xml')
 sports.links.append('http://rss.nytimes.com/services/xml/rss/nyt/ProFootball.xml')
@@ -104,12 +106,13 @@ tech.links.append('http://rss.nytimes.com/services/xml/rss/nyt/PersonalTech.xml'
 tech.links.append('http://www.techradar.com/rss')
 tech.links.append('https://www.cnet.com/g00/3_c-6bbb.hsjy.htr_/c-6RTWJUMJZX77x24myyux78x3ax2fx2fbbb.hsjy.htrx2fwx78x78x2fsjbx78x2f_$/$/$/$')
 tech.links.append('https://www.techrepublic.com/rssfeeds/articles/')
-tech.links.append('http://rssfeeds.usatoday.com/usatoday-TechTopStories')
+tech.links.append('http://rssfeeds.usatoday.com/usatoday-TechTopStories')'''
 
 categories.append(business)
 categories.append(entertainment_art)
+categories.append(health)
 categories.append(politics)
-categories.append(science_health)
+categories.append(science)
 categories.append(sports)
 categories.append(tech)
 
@@ -130,11 +133,12 @@ def parseRSSPages():
 
             #filter out stuff we don't want (Yahoo might lead to duplicate articles)
             #money.cnn.com is another top level rss feed page that we don't want to add as an rss link
-            if "yahoo" not in l and "video" not in l and "money.cnn.com" not in l:
+            if "yahoo" not in l and "video" not in l and "money.cnn.com" not in l and ("health" in l or "science" in l):
                 if ("showbiz" in l or "entertainment" in l or "arts" in l): entertainment_art.links.append(l)
+                if ("health" in l): health.links.append(l)
                 if ("business" in l or "money" in l): business.links.append(l)
                 if ("politics" in l): politics.links.append(l)
-                if ("science" in l or "health" in l): science_health.links.append(l)
+                if ("science" in l): science.links.append(l)
                 if ("sports" in l): sports.links.append(l)
                 if ("tech" in l): tech.links.append(l)
 
