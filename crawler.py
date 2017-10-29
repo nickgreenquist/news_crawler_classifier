@@ -42,24 +42,25 @@ class Category():
 categories = []
 rss_links = []
 
-data_dir = os.getcwd() + '/links'
-if len(sys.argv) > 1:
-    data_dir = os.getcwd() + '/' + sys.argv[1]
-for filename in os.listdir(data_dir):
-    catname = filename.split('.')[0]
-    if catname != 'rss':
-        new_category = Category(name = filename.split('.')[0], links = [], token_list = [], articles = [])
-    
-    file = open((data_dir + '/' + filename),"r") 
-    for line in file: 
-        if catname == 'rss':
-            rss_links.append(line)
-        else:
-            new_category.links.append(line)
-    file.close()
+def loadLinks():
+        data_dir = os.getcwd() + '/links'
+        if len(sys.argv) > 1:
+        data_dir = os.getcwd() + '/' + sys.argv[1]
+        for filename in os.listdir(data_dir):
+        catname = filename.split('.')[0]
+        if catname != 'rss':
+            new_category = Category(name = filename.split('.')[0], links = [], token_list = [], articles = [])
 
-    if catname != 'rss':
-        categories.append(new_category)
+        file = open((data_dir + '/' + filename),"r") 
+        for line in file: 
+            if catname == 'rss':
+                rss_links.append(line)
+            else:
+                new_category.links.append(line)
+        file.close()
+
+        if catname != 'rss':
+            categories.append(new_category)
 
 
 def parseRSSPages():
@@ -186,6 +187,7 @@ def writeData():
                     print(e)
         file.close()
 
+loadLinks()
 parseRSSPages()
 parseArticles()
 writeData()
