@@ -11,6 +11,7 @@ import random
 import sys
 import os
 import re
+import collections
 from nltk.stem.wordnet import WordNetLemmatizer
 from stemming.porter2 import stem
 lmtzr = WordNetLemmatizer()
@@ -53,10 +54,28 @@ for category in categories:
                 total_articles += 1
 
                 article = line.split(":::::")
-                category.token_list.append(article[1])
-                print(article[0])
+                #print(article[0])
+
+                #category.token_list.append(article[1])
+                category.token_list.append(line)
         file.close()
 print ("Total Articles: " + str(total_articles))
+print ('\n')
+
+#remove duplicate articles
+total_articles = 0
+for category in categories:
+
+    removed = 0
+    dupes = list(set([x for x in category.token_list if category.token_list.count(x) > 1]))
+    for d in dupes:
+        #print(d.split(":::::")[0])
+        removed += 1
+    print("Dupes in %s: %s" % (category.name, str(len(dupes))))
+
+    category.token_list = list(set(category.token_list))
+    total_articles += len(category.token_list)
+print ("Total Articles with removed duplicates: " + str(total_articles))
 print ('\n')
 
 #trim out dataset
@@ -94,19 +113,6 @@ for category in categories:
     c_length = len(category.token_list)
     category.train = category.token_list[: int(.8 *c_length)]
     category.test = category.token_list[int(.8 *c_length):c_length]
-
-#lets make entertainment smaller - we don't want it dominating the model
-'''for category in categories:
-    if category.name == "Entertainment and Arts":
-        print ("Entertainment: " + str(len(category.token_list)))
-maxt = 0
-for category in categories:
-    if len(category.token_list) > maxt and category.name != "Entertainment and Arts":
-        maxt = len(category.token_list)
-for category in categories:
-    if category.name == "Entertainment and Arts":
-        category.token_list = category.token_list[:maxt]
-        print ("Entertainment: " + str(len(category.token_list)))'''
 
 #Find train tokens from 80% of the token list per category
 x_train_tokens = []
