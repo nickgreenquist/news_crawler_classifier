@@ -1,0 +1,6 @@
+http://feeds.foxnews.com/foxnews/entertainment
+http://rss.nytimes.com/services/xml/rss/nyt/Arts.xml
+http://rss.nytimes.com/services/xml/rss/nyt/ArtandDesign.xml
+http://rss.nytimes.com/services/xml/rss/nyt/Movies.xml
+http://rss.nytimes.com/services/xml/rss/nyt/Theater.xml
+https://rss.upi.com/news/entertainment_news.rss

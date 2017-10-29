@@ -1,0 +1,8 @@
+http://feeds.foxnews.com/foxnews/science
+http://rss.nytimes.com/services/xml/rss/nyt/Science.xml
+https://rss.upi.com/news/science_news.rss
+http://rss.sciam.com/ScientificAmerican-News
+https://www.wired.com/feed/category/science/latest/rss
+http://feeds.foxnews.com/foxnews/health
+http://rss.nytimes.com/services/xml/rss/nyt/Health.xml
+https://rss.upi.com/news/health_news.rss

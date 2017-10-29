@@ -40,81 +40,27 @@ class Category():
         self.articles = articles
 
 categories = []
-
-business = Category(name = 'Business', links = [], token_list = [], articles = [])
-entertainment_art = Category(name = 'Entertainment and Arts', links = [], token_list = [], articles = [])
-health = Category(name = 'Health', links = [], token_list = [], articles = [])
-politics = Category(name = 'Politics', links = [], token_list = [], articles = [])
-science = Category(name = 'Science', links = [], token_list = [], articles = [])
-sports = Category(name = 'Sports', links = [], token_list = [], articles = [])
-tech = Category(name = 'Tech', links = [], token_list = [], articles = [])
-
-#Sites with many links to seperate RSS feeds
 rss_links = []
-rss_links.append('https://www.reuters.com/tools/rss')
-rss_links.append('http://www.cnn.com/services/rss/')
-rss_links.append('http://www.nbcnewyork.com/rss/')
-rss_links.append('http://abcnews.go.com/Site/page/rss--3520115')
-rss_links.append('http://www.bbc.com/news/10628494')
 
+data_dir = os.getcwd() + '/links'
+if len(sys.argv) > 1:
+    data_dir = os.getcwd() + '/' + sys.argv[1]
+for filename in os.listdir(data_dir):
+    catname = filename.split('.')[0]
+    if catname != 'rss':
+        new_category = Category(name = filename.split('.')[0], links = [], token_list = [], articles = [])
+    
+    file = open((data_dir + '/' + filename),"r") 
+    for line in file: 
+        if catname == 'rss':
+            rss_links.append(line)
+        else:
+            new_category.links.append(line)
+    file.close()
 
-#Add some standard rss links for specific categories
-#We are doing this becuase some master lists don't play nice when opened from above loop
-'''business.links.append('http://www.economist.com/sections/business-finance/rss.xml')
-business.links.append('http://nypost.com/business/feed/')
-business.links.append('https://www.cnbc.com/id/10001147/device/rss/rss.html')
-business.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Business.xml')
-business.links.append('https://rss.upi.com/news/business_news.rss')
-business.links.append('http://rss.cnn.com/rss/money_news_economy.rss')
-business.links.append('http://rss.cnn.com/rss/money_markets.rss')
+    if catname != 'rss':
+        categories.append(new_category)
 
-entertainment_art.links.append('http://feeds.foxnews.com/foxnews/entertainment')
-entertainment_art.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Arts.xml')
-entertainment_art.links.append('http://rss.nytimes.com/services/xml/rss/nyt/ArtandDesign.xml')
-entertainment_art.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Movies.xml')
-entertainment_art.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Theater.xml')
-entertainment_art.links.append('https://rss.upi.com/news/entertainment_news.rss')'''
-
-health.links.append('http://feeds.foxnews.com/foxnews/health')
-health.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Health.xml')
-health.links.append('https://rss.upi.com/news/health_news.rss')
-
-'''politics.links.append('http://feeds.foxnews.com/foxnews/politics')
-politics.links.append('https://www.cnbc.com/id/10000113/device/rss/rss.html')
-politics.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Politics.xml')
-politics.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Upshot.xml')
-politics.links.append('http://feeds.washingtonpost.com/rss/politics')'''
-
-science.links.append('http://feeds.foxnews.com/foxnews/science')
-science.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Science.xml')
-science.links.append('https://rss.upi.com/news/science_news.rss')
-science.links.append('http://feeds.latimes.com/latimes/news/science')
-science.links.append('http://rss.sciam.com/ScientificAmerican-News')
-
-'''sports.links.append('http://feeds.foxnews.com/foxnews/sports')
-sports.links.append('http://www.espn.com/espn/rss/news')
-sports.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Sports.xml')
-sports.links.append('http://rss.nytimes.com/services/xml/rss/nyt/ProFootball.xml')
-sports.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Baseball.xml')
-sports.links.append('https://www.wired.com/feed/category/science/latest/rss')
-
-tech.links.append('http://feeds.feedburner.com/TechCrunch/')
-tech.links.append('http://feeds.foxnews.com/foxnews/tech')
-tech.links.append('https://www.cnbc.com/id/19854910/device/rss/rss.html')
-tech.links.append('http://rss.nytimes.com/services/xml/rss/nyt/Technology.xml')
-tech.links.append('http://rss.nytimes.com/services/xml/rss/nyt/PersonalTech.xml')
-tech.links.append('http://www.techradar.com/rss')
-tech.links.append('https://www.cnet.com/g00/3_c-6bbb.hsjy.htr_/c-6RTWJUMJZX77x24myyux78x3ax2fx2fbbb.hsjy.htrx2fwx78x78x2fsjbx78x2f_$/$/$/$')
-tech.links.append('https://www.techrepublic.com/rssfeeds/articles/')
-tech.links.append('http://rssfeeds.usatoday.com/usatoday-TechTopStories')'''
-
-categories.append(business)
-categories.append(entertainment_art)
-categories.append(health)
-categories.append(politics)
-categories.append(science)
-categories.append(sports)
-categories.append(tech)
 
 def parseRSSPages():
     #loop through master RSS feed lists that grab all links from children rss links
@@ -133,21 +79,29 @@ def parseRSSPages():
 
             #filter out stuff we don't want (Yahoo might lead to duplicate articles)
             #money.cnn.com is another top level rss feed page that we don't want to add as an rss link
-            if "yahoo" not in l and "video" not in l and "money.cnn.com" not in l and ("health" in l or "science" in l):
-                if ("showbiz" in l or "entertainment" in l or "arts" in l): entertainment_art.links.append(l)
-                if ("health" in l): health.links.append(l)
-                if ("business" in l or "money" in l): business.links.append(l)
-                if ("politics" in l): politics.links.append(l)
-                if ("science" in l): science.links.append(l)
-                if ("sports" in l): sports.links.append(l)
-                if ("tech" in l): tech.links.append(l)
+            if "yahoo" not in l and "video" not in l and "money.cnn.com" not in l:
+                for c in categories:
+                    if ("showbiz" in l or "entertainment" in l or "arts" in l) and "entertainment" in c.name:
+                        c.links.append(l)
+                    if ("health" in l) and "health" in c.name:
+                        c.links.append(l)
+                    if ("business" in l or "money" in l) and "business" in c.name:
+                        c.links.append(l)
+                    if ("politics" in l) and "politics" in c.name:
+                        c.links.append(l)
+                    if ("science" in l) and "science" in c.name:
+                        c.links.append(l)
+                    if ("sports" in l) and "sports" in c.name:
+                        c.links.append(l)
+                    if ("tech" in l) and "tech" in c.name:
+                        c.links.append(l)
 
 def parseArticles():
     for category in categories:
         for link in category.links:
             try:
                 feed = feedparser.parse(link)
-                print("Processing: " + link)
+                print("%s - Processing: %s" % (category.name, link))
                 for entry in feed['entries']:
                     try:
                         article = Article(entry['link'])
@@ -216,15 +170,20 @@ def writeData():
         #write articles to file
         file = open((data_dir + "/" + "/" + category.name + "_articles.txt"),"w") 
         for article in category.articles:
-
-            file.write(article.heading + ':::::' + article.text)
-            file.write('\n')
+            try:
+                file.write(article.heading + ':::::' + article.text)
+                file.write('\n')
+            except Exception as e:
+                    print(e)
         file.close()
 
         #write sentences to file
         file = open((data_dir + "/" + "/" + category.name + ".txt"),"w") 
         for token in category.token_list:
-            file.write(token + '\n')
+            try:
+                file.write(token + '\n')
+            except Exception as e:
+                    print(e)
         file.close()
 
 parseRSSPages()

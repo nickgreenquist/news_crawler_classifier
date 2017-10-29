@@ -1,0 +1,10 @@
+http://feeds.foxnews.com/foxnews/politics
+https://www.cnbc.com/id/10000113/device/rss/rss.html
+http://rss.nytimes.com/services/xml/rss/nyt/Politics.xml
+http://rss.nytimes.com/services/xml/rss/nyt/Upshot.xml
+http://feeds.washingtonpost.com/rss/politics
+http://feeds.skynews.com/feeds/rss/politics.xml
+https://www.politico.com/rss/congress.xml
+http://thehill.com/rss/syndicator/19110
+http://feeds.feedburner.com/timeblogs/swampland
+https://www.newsmax.com/rss/Politics/1/

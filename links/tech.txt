@@ -1,0 +1,9 @@
+http://feeds.feedburner.com/TechCrunch/
+http://feeds.foxnews.com/foxnews/tech
+https://www.cnbc.com/id/19854910/device/rss/rss.html
+http://rss.nytimes.com/services/xml/rss/nyt/Technology.xml
+http://rss.nytimes.com/services/xml/rss/nyt/PersonalTech.xml
+http://www.techradar.com/rss
+https://www.cnet.com/g00/3_c-6bbb.hsjy.htr_/c-6RTWJUMJZX77x24myyux78x3ax2fx2fbbb.hsjy.htrx2fwx78x78x2fsjbx78x2f_$/$/$/$
+https://www.techrepublic.com/rssfeeds/articles/
+http://rssfeeds.usatoday.com/usatoday-TechTopStories

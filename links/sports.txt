@@ -1,0 +1,10 @@
+http://feeds.foxnews.com/foxnews/sports
+http://www.espn.com/espn/rss/news'
+http://rss.nytimes.com/services/xml/rss/nyt/Sports.xml
+http://rss.nytimes.com/services/xml/rss/nyt/ProFootball.xml
+http://rss.nytimes.com/services/xml/rss/nyt/Baseball.xml
+https://talksport.com/rss/sports-news/all/feed
+https://www.si.com/rss/si_topstories.rss
+http://feeds.reuters.com/reuters/UKSportsNews
+http://feeds.feedburner.com/ndtvsports-latest
+https://timesofindia.indiatimes.com/rssfeeds/4719148.cms

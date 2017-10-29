@@ -1,0 +1,7 @@
+http://www.economist.com/sections/business-finance/rss.xml
+http://nypost.com/business/feed/
+https://www.cnbc.com/id/10001147/device/rss/rss.html
+http://rss.nytimes.com/services/xml/rss/nyt/Business.xml
+https://rss.upi.com/news/business_news.rss
+http://rss.cnn.com/rss/money_news_economy.rss
+http://rss.cnn.com/rss/money_markets.rss
