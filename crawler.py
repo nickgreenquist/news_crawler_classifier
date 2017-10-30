@@ -43,10 +43,10 @@ categories = []
 rss_links = []
 
 def loadLinks():
-        data_dir = os.getcwd() + '/links'
-        if len(sys.argv) > 1:
+    data_dir = os.getcwd() + '/links'
+    if len(sys.argv) > 1:
         data_dir = os.getcwd() + '/' + sys.argv[1]
-        for filename in os.listdir(data_dir):
+    for filename in os.listdir(data_dir):
         catname = filename.split('.')[0]
         if catname != 'rss':
             new_category = Category(name = filename.split('.')[0], links = [], token_list = [], articles = [])
