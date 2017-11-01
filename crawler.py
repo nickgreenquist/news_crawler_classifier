@@ -82,19 +82,20 @@ def parseRSSPages():
             #money.cnn.com is another top level rss feed page that we don't want to add as an rss link
             if "yahoo" not in l and "video" not in l and "money.cnn.com" not in l:
                 for c in categories:
-                    if ("showbiz" in l or "entertainment" in l or "arts" in l) and "entertainment" in c.name:
+                    name = c.name.lower()
+                    if ("showbiz" in l or "entertainment" in l or "arts" in l) and "entertainment" in name:
                         c.links.append(l)
-                    if ("health" in l) and "health" in c.name:
+                    if ("health" in l) and "health" in name:
                         c.links.append(l)
-                    if ("business" in l or "money" in l) and "business" in c.name:
+                    if ("business" in l or "money" in l) and "business" in name:
                         c.links.append(l)
-                    if ("politics" in l) and "politics" in c.name:
+                    if ("politics" in l) and "politics" in name:
                         c.links.append(l)
-                    if ("science" in l) and "science" in c.name:
+                    if ("science" in l) and "science" in name:
                         c.links.append(l)
-                    if ("sports" in l) and "sports" in c.name:
+                    if ("sports" in l) and "sports" in name:
                         c.links.append(l)
-                    if ("tech" in l) and "tech" in c.name:
+                    if ("tech" in l) and "tech" in name:
                         c.links.append(l)
 
 def parseArticles():
