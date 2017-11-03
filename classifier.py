@@ -56,24 +56,20 @@ for category in categories:
                 article = line.split(":::::")
                 #print(article[0])
 
-                #category.token_list.append(article[1])
+                #category.token_list.append(article[0])
                 category.token_list.append(line)
         file.close()
 print ("Total Articles: " + str(total_articles))
-print ('\n')
 
 #remove duplicate articles
 total_articles = 0
 for category in categories:
-
-    removed = 0
-    dupes = list(set([x for x in category.token_list if category.token_list.count(x) > 1]))
-    for d in dupes:
-        #print(d.split(":::::")[0])
-        removed += 1
-    print("Dupes in %s: %s" % (category.name, str(len(dupes))))
-
+    withDupes = len(category.token_list)
     category.token_list = list(set(category.token_list))
+    removed = withDupes - len(category.token_list)
+
+    print("%s # of dupes: %s" % (category.name, removed))
+
     total_articles += len(category.token_list)
 print ("Total Articles with removed duplicates: " + str(total_articles))
 print ('\n')
@@ -195,9 +191,20 @@ for category in categories:
         #results
         print (category.name + ": " + str(np.mean(predicted == np.array(Y_test))))
 
+        if "business" in category.name.lower():
+            for i in range(0, len(predicted)):
+                if "business" not in predicted[i].lower():
+                    print("%s: %s" % (predicted[i], X_test[i]))
+
     except:
         print(category.name + ": ERROR")
 print('\n')
+
+'''s = ""
+while s != 'q':
+    s = input()
+    r = classifier.predict([s])
+    print("%s: %s" % (s, r))'''
 
 '''-------------------------------------------Naives Bayes----------------------------------------------------'''
 print ("Results for Naive Bayes")
