@@ -26,241 +26,317 @@ class Category():
         self.articles = articles
 
 categories = []
+x_train_articles = []
+y_train_tags = []
 
-total_sentences = 0
-data_dir = os.getcwd() + '/data'
-if len(sys.argv) > 1:
-    data_dir = os.getcwd() + '/' + sys.argv[1]
-for dirname in os.listdir(data_dir):
-    for filename in os.listdir(data_dir + "/" + dirname):
-        if 'articles' in filename:
-            #create new category if needed
-            category_exists = False
-            for category in categories:
-                if category.name == filename.split('.')[0]:
-                    category_exists = True
-            if not category_exists:
-                new_category = Category(name = filename.split('.')[0], links = [], token_list = [], articles = [], train = [], test = [])
-                categories.append(new_category)
-
-#read tokens into category token lists
-total_articles = 0
-for category in categories:
+def ReadDataSet():
+    total_sentences = 0
+    data_dir = os.getcwd() + '/data'
+    if len(sys.argv) > 1:
+        data_dir = os.getcwd() + '/' + sys.argv[1]
     for dirname in os.listdir(data_dir):
-        file = open((data_dir + "/" + dirname + "/" + category.name + ".txt"),"r") 
-        for line in file: 
-            #must contain letters and be longer than 5 characters long
-            if any(c.isalpha()for c in line) and len(line) > 5:
-                total_articles += 1
+        for filename in os.listdir(data_dir + "/" + dirname):
+            if 'articles' in filename:
+                #create new category if needed
+                category_exists = False
+                for category in categories:
+                    if category.name == filename.split('.')[0]:
+                        category_exists = True
+                if not category_exists:
+                    new_category = Category(name = filename.split('.')[0], links = [], token_list = [], articles = [], train = [], test = [])
+                    categories.append(new_category)
 
-                article = line.split(":::::")
-                #print(article[0])
+    #read articles into category articles
+    total_articles = 0
+    for category in categories:
+        for dirname in os.listdir(data_dir):
+            file = open((data_dir + "/" + dirname + "/" + category.name + ".txt"),"r") 
+            for line in file: 
+                #must contain letters and be longer than 5 characters long
+                if any(c.isalpha()for c in line) and len(line) > 5:
+                    total_articles += 1
 
-                #category.token_list.append(article[0])
-                category.token_list.append(line)
-        file.close()
-print ("Total Articles: " + str(total_articles))
+                    article = line.split(":::::")
+                    #print(article[0])
 
-#remove duplicate articles
-total_articles = 0
-for category in categories:
-    withDupes = len(category.token_list)
-    category.token_list = list(set(category.token_list))
-    removed = withDupes - len(category.token_list)
+                    category.articles.append(line)
+            file.close()
+    print ("Total Articles: " + str(total_articles))
 
-    print("%s # of dupes: %s" % (category.name, removed))
-
-    total_articles += len(category.token_list)
-print ("Total Articles with removed duplicates: " + str(total_articles))
-print ('\n')
 
 #trim out dataset
-cachedStopWords = stopwords.words("english")
-for category in categories:
-    newList = []
-    i = 0
-    while i < len(category.token_list):
-        category.token_list[i] = category.token_list[i].lower()
+def CleanData():
+    #remove duplicate articles
+    total_articles = 0
+    for category in categories:
+        withDupes = len(category.articles)
+        category.articles = list(set(category.articles))
+        removed = withDupes - len(category.articles)
 
-        #remove easy punctation
-        category.token_list[i] = re.sub(r"[,.;@#?!&$-]+\ *", " ", category.token_list[i])   
+        print("%s # of dupes: %s" % (category.name, removed))
 
-        #remove punctuation
-        category.token_list[i] = "".join(l for l in category.token_list[i] if l not in string.punctuation)   
+        total_articles += len(category.articles)
+    print ("Total Articles with removed duplicates: " + str(total_articles))
+    print ('\n')
 
-        category.token_list[i] = re.sub('\s+',' ',category.token_list[i])
+    cachedStopWords = stopwords.words("english")
+    for category in categories:
+        newList = []
+        i = 0
+        while i < len(category.articles):
+            heading = category.articles[i].split(":::::")[0]
 
-        #remove stop words
-        text = ' '.join([word for word in category.token_list[i].split() if word not in cachedStopWords])
-        category.token_list[i] = text
+            category.articles[i] = category.articles[i].lower()
 
-        '''#remove sentences without at least 5 words
-        if len(category.token_list[i].split()) < 5:
-            #print ("removing: " + category.token_list[i])
-            del category.token_list[i]'''
-        i += 1
+            #remove easy punctation
+            category.articles[i] = re.sub(r"[,.;@#?!&$-]+\ *", " ", category.articles[i])   
 
-#shuffle arrays
-for category in categories:
-    random.shuffle(category.token_list)
+            #remove punctuation
+            category.articles[i] = "".join(l for l in category.articles[i] if l not in string.punctuation)   
 
-#find train and test sets for each category
-for category in categories:
-    c_length = len(category.token_list)
-    category.train = category.token_list[: int(.8 *c_length)]
-    category.test = category.token_list[int(.8 *c_length):c_length]
+            category.articles[i] = re.sub('\s+',' ',category.articles[i])
 
-#Find train tokens from 80% of the token list per category
-x_train_tokens = []
-y_train_tags = []
-for category in categories:
-    for tok in category.train:
-        x_train_tokens.append(tok)
-        y_train_tags.append([category.name])
-X_train = np.array(x_train_tokens)
+            #remove stop words
+            text = ' '.join([word for word in category.articles[i].split() if word not in cachedStopWords])
 
-'''---------------------------------------------OneVsRestClassifier--------------------------------------'''
-'''print ("Results for OneVsRestClassifier")
-mlb = MultiLabelBinarizer()
-Y = mlb.fit_transform(y_train_tags)
-classifier = Pipeline([
-    ('vectorizer', CountVectorizer()),
-    ('tfidf', TfidfTransformer()),
-    ('clf', OneVsRestClassifier(LinearSVC()))])
-classifier.fit(X_train, Y)
+            text = heading + " ::::: " + text
 
-#Find test tokens from 20% of the token list per category
-target_names = []
-for category in categories:
-    try:
-        #grab test tokens for this category
-        target_names.append(category.name)
-        c_length = len(category.token_list)
-        test_tokens = []
-        Y_test = []
-        for tok in category.test:
-            test_tokens.append(tok)
-            Y_test.append([category.name])
+            category.articles[i] = text
 
-        #classify test tokens   
-        X_test = np.array(test_tokens)
-        predicted = classifier.predict(X_test)
-        all_labels = mlb.inverse_transform(predicted)
-        
-        #display results
-        total = 0
-        correct = 0
-        for item, labels in zip(X_test, all_labels):
-            #since multiple labels are possible (as well as none), 
-            #we check if the correct label is in the predicted label list
-            if category.name in labels: 
-                correct += 1
-            total += 1
-        print (category.name + ": " + str(correct / total))
+            i += 1
 
-    except:
-        print(category.name + ": ERROR")
-print ('\n')'''
+def PrepareTestAndTrain():
+    #shuffle arrays
+    for category in categories:
+        random.shuffle(category.articles)
+
+    #find train and test sets for each category
+    for category in categories:
+        c_length = len(category.articles)
+        category.train = category.articles[: int(.8 *c_length)]
+        category.test = category.articles[int(.8 *c_length):c_length]
+
+    #Find train articles from 80% of the articles per category
+    for category in categories:
+        for tok in category.train:
+            x_train_articles.append(tok)
+            y_train_tags.append([category.name])
+    X_train = np.array(x_train_articles)
+    return X_train
 
 '''---------------------------------------------OneVsOneClassifier--------------------------------------'''
-print ("Results for OneVsOneClassifier")
-classifier = Pipeline([
-    ('vectorizer', CountVectorizer()),
-    ('tfidf', TfidfTransformer()),
-    ('clf', OneVsOneClassifier(LinearSVC()))])
-Y = np.array(y_train_tags)
-classifier.fit(X_train, Y.ravel())
+def OneVsOne(X_train):
+    print ("Results for OneVsOneClassifier")
+    classifier = Pipeline([
+        ('vectorizer', CountVectorizer()),
+        ('tfidf', TfidfTransformer()),
+        ('clf', OneVsOneClassifier(LinearSVC()))])
+    Y = np.array(y_train_tags)
+    classifier.fit(X_train, Y.ravel())
 
-#Find test tokens from 20% of the token list per category
-target_names = []
-for category in categories:
-    try:
-        #grab test tokens for this category
-        target_names.append(category.name)
-        c_length = len(category.token_list)
-        test_tokens = []
+    #Find test articles from 20% of the articles list per category
+    target_names = []
+    for category in categories:
+        try:
+            #grab test articles for this category
+            target_names.append(category.name)
+            c_length = len(category.articles)
+            test_articles = []
+            Y_test = []
+            for tok in category.test:
+                test_articles.append(tok)
+                Y_test.append([category.name])
+
+            #classify test articles   
+            X_test = np.array(test_articles)
+            predicted = classifier.predict(X_test)
+
+            #results
+            print (category.name + ": " + str(np.mean(predicted == np.array(Y_test))))
+
+            if "business" in category.name.lower():
+                for i in range(0, len(predicted)):
+                    if "business" not in predicted[i].lower():
+                        print("%s: %s" % (predicted[i], X_test[i].split(":::::")[0]))
+
+        except:
+            print(category.name + ": ERROR")
+    print('\n')
+
+    '''s = ""
+    while s != 'q':
+        s = input()
+        r = classifier.predict([s])
+        print("%s: %s" % (s, r))'''
+
+'''-------------------------------------------Naives Bayes----------------------------------------------------'''
+def NaiveBayes(X_train):
+    print ("Results for Naive Bayes")
+    from sklearn.feature_extraction.text import CountVectorizer
+    count_vect = CountVectorizer()
+    X_train_counts = count_vect.fit_transform(X_train)
+
+    from sklearn.feature_extraction.text import TfidfTransformer
+    tf_transformer = TfidfTransformer(use_idf=False).fit(X_train_counts)
+    X_train_tf = tf_transformer.transform(X_train_counts)
+
+    tfidf_transformer = TfidfTransformer()
+    X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
+
+    from sklearn.naive_bayes import MultinomialNB
+    Y = np.array(y_train_tags)
+    clf = MultinomialNB().fit(X_train_tfidf, Y.ravel())
+
+    for category in categories:
+        c_length = len(category.articles)
+        test_articles = []
         Y_test = []
         for tok in category.test:
-            test_tokens.append(tok)
-            Y_test.append([category.name])
+                test_articles.append(tok)
+                Y_test.append([category.name])
 
-        #classify test tokens   
-        X_test = np.array(test_tokens)
-        predicted = classifier.predict(X_test)
+
+        X_new_counts = count_vect.transform(test_articles)
+        X_new_tfidf = tfidf_transformer.transform(X_new_counts)
+
+        predicted = clf.predict(X_new_tfidf)
 
         #results
         print (category.name + ": " + str(np.mean(predicted == np.array(Y_test))))
-
-        if "business" in category.name.lower():
-            for i in range(0, len(predicted)):
-                if "business" not in predicted[i].lower():
-                    print("%s: %s" % (predicted[i], X_test[i]))
-
-    except:
-        print(category.name + ": ERROR")
-print('\n')
-
-'''s = ""
-while s != 'q':
-    s = input()
-    r = classifier.predict([s])
-    print("%s: %s" % (s, r))'''
-
-'''-------------------------------------------Naives Bayes----------------------------------------------------'''
-print ("Results for Naive Bayes")
-from sklearn.feature_extraction.text import CountVectorizer
-count_vect = CountVectorizer()
-X_train_counts = count_vect.fit_transform(X_train)
-
-from sklearn.feature_extraction.text import TfidfTransformer
-tf_transformer = TfidfTransformer(use_idf=False).fit(X_train_counts)
-X_train_tf = tf_transformer.transform(X_train_counts)
-
-tfidf_transformer = TfidfTransformer()
-X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
-
-from sklearn.naive_bayes import MultinomialNB
-clf = MultinomialNB().fit(X_train_tfidf, Y.ravel())
-
-for category in categories:
-    c_length = len(category.token_list)
-    test_tokens = []
-    Y_test = []
-    for tok in category.test:
-            test_tokens.append(tok)
-            Y_test.append([category.name])
-
-
-    X_new_counts = count_vect.transform(test_tokens)
-    X_new_tfidf = tfidf_transformer.transform(X_new_counts)
-
-    predicted = clf.predict(X_new_tfidf)
-
-    #results
-    print (category.name + ": " + str(np.mean(predicted == np.array(Y_test))))
-print ('\n')
+    print ('\n')
 
 '''-------------------------------------------Support Vector Machine----------------------------------------------------'''
-print ("Results for Support Vector Machine")
-from sklearn.linear_model import SGDClassifier
-text_clf = Pipeline([('vect', CountVectorizer()),
-    ('tfidf', TfidfTransformer()),
-    ('clf', SGDClassifier(loss='hinge', penalty='l2',
-        alpha=1e-3, random_state=42,
-        max_iter=5, tol=None)),
-])
-Y = np.array(y_train_tags)
-text_clf.fit(X_train, Y.ravel())  
+def SVM(X_train):
+    print ("Results for Support Vector Machine")
+    from sklearn.linear_model import SGDClassifier
+    text_clf = Pipeline([('vect', CountVectorizer()),
+        ('tfidf', TfidfTransformer()),
+        ('clf', SGDClassifier(loss='hinge', penalty='l2',
+            alpha=1e-3, random_state=42,
+            max_iter=5, tol=None)),
+    ])
+    Y = np.array(y_train_tags)
+    text_clf.fit(X_train, Y.ravel())  
 
-for category in categories:
-    c_length = len(category.token_list)
-    test_tokens = []
-    Y_test = []
-    for tok in category.test:
-            test_tokens.append(tok)
-            Y_test.append([category.name])
+    for category in categories:
+        c_length = len(category.articles)
+        test_articles = []
+        Y_test = []
+        for tok in category.test:
+                test_articles.append(tok)
+                Y_test.append([category.name])
 
-    predicted = text_clf.predict(test_tokens)
+        predicted = text_clf.predict(test_articles)
+        
+        #results
+        print (category.name + ": " + str(np.mean(predicted == np.array(Y_test))))
+
+def SupervisedLearning():
+    X_train = PrepareTestAndTrain()
+    OneVsOne(X_train)
+    NaiveBayes(X_train)
+    SVM(X_train)
+
+ReadDataSet()
+CleanData()
+
+#SupervisedLearning()
+
+
+
+
+'''-------------------------------------------------------------------'''
+
+
+
+#Unsupervised Learning
+numHashes = 100
+nextPrime = 4294967311
+maxShingleID = 2**32-1
+iterations = 30
+
+def pickRandomCoeffs(k):
+  # Create a list of 'k' random values.
+  randList = []
+  
+  while k > 0:
+    # Get a random shingle ID.
+    randIndex = random.randint(0, maxShingleID) 
+  
+    # Ensure that each random number is unique.
+    while randIndex in randList:
+      randIndex = random.randint(0, maxShingleID) 
     
-    #results
-    print (category.name + ": " + str(np.mean(predicted == np.array(Y_test))))
+    # Add the random number to the list.
+    randList.append(randIndex)
+    k = k - 1
+    
+  return randList
+
+coeffA = pickRandomCoeffs(numHashes)
+coeffB = pickRandomCoeffs(numHashes)
+print("random done")
+
+def characteristicMatrix():
+    kvp = []
+    for category in categories:
+        for article in category.articles:
+            split = article.split(":::::")
+            heading = split[0]
+            text = split[1]
+            text = text.split()
+            text = list(set(text))
+            hashlist = []
+            for word in text:
+                crc = hash(word)
+                hashlist.append(crc)
+            kvp.append((heading, hashlist))
+    return kvp
+
+def minHash(kvp):
+    signatures = []
+
+    print(len(kvp))
+    for doc in kvp:
+        shingleIDSet = doc[1]
+        signature = []
+        
+        for i in range(0, numHashes):
+            minHashCode = nextPrime + 1
+            
+            for shingleID in shingleIDSet:
+                hashCode = (coeffA[i] * shingleID + coeffB[i]) % nextPrime 
+                hashCode = hashCode / nextPrime
+                
+                if hashCode < minHashCode:
+                    minHashCode = hashCode
+
+            signature.append(minHashCode)    
+
+        signatures.append((doc[0], signature))  
+
+    return signatures
+
+def jacdist(x, c):
+    same = 0
+    total = 0
+    unique = []
+
+    for i in range(0, numHashes):
+        if x[i] == c[i]:
+            same += 1
+        unique.append(x[i])
+        unique.append(c[i])
+    
+    unique = set(unique)
+    unique = list(unique)
+    total = len(unique)
+    dist = 1.0 - (float(same) / float(total))
+    print(dist)
+    return dist
+
+
+kvp = characteristicMatrix()
+signatures = minHash(kvp)
+
+print(signatures[::10])

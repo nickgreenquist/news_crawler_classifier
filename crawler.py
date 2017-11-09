@@ -28,9 +28,10 @@ filters = [
 ]
 
 class ArticleCrawled():
-    def __init__(self, heading, text):
+    def __init__(self, heading, text, link):
         self.heading = heading
         self.text = text
+        self.link = link
 
 class Category():
     def __init__(self, name, links, token_list, articles):
@@ -130,7 +131,7 @@ def parseArticles():
                         #remove any extra whitespace from entire article
                         articleText = re.sub('\s+',' ',articleText)
 
-                        newArticle = ArticleCrawled(heading = heading, text = articleText)
+                        newArticle = ArticleCrawled(heading = heading, text = articleText, link = entry['link'])
 
                         category.articles.append(newArticle)
                     except Exception as e:
@@ -173,6 +174,7 @@ def writeData():
         file = open((data_dir + "/" + "/" + category.name + "_articles.txt"),"w") 
         for article in category.articles:
             try:
+                #file.write(article.link + ':::::' + article.heading + ':::::' + article.text)
                 file.write(article.heading + ':::::' + article.text)
                 file.write('\n')
             except Exception as e:
