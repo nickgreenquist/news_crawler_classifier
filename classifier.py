@@ -16,6 +16,27 @@ from nltk.stem.wordnet import WordNetLemmatizer
 from stemming.porter2 import stem
 lmtzr = WordNetLemmatizer()
 
+removephrases = [
+    'media playback is unsupported on your device',
+    'image copyright',
+    'getty images',
+    'media caption',
+    'image caption',
+    '(reuters)',
+    '(upi)',
+    'getty',
+    '(cnn)',
+    'advertisement',
+]
+
+class ArticleCrawled():
+    def __init__(self, heading, text, link, signature, shingles):
+        self.heading = heading
+        self.text = text
+        self.link = link
+        self.signature = signature
+        self.shingles = shingles
+
 class Category():
     def __init__(self, name, links, token_list, articles, test, train):
         self.name = name
@@ -48,60 +69,62 @@ def ReadDataSet():
 
     #read articles into category articles
     total_articles = 0
+    seen = {}
     for category in categories:
         for dirname in os.listdir(data_dir):
-            file = open((data_dir + "/" + dirname + "/" + category.name + ".txt"),"r") 
-            for line in file: 
-                #must contain letters and be longer than 5 characters long
-                if any(c.isalpha()for c in line) and len(line) > 5:
-                    total_articles += 1
+            try:
+                file = open((data_dir + "/" + dirname + "/" + category.name + ".txt"),"r") 
+                for line in file: 
+                    #must contain letters and be longer than 5 characters long
+                    if any(c.isalpha()for c in line) and len(line) > 5:
+                        article = line.split(":::::")
+                        heading = article[0]
+                        text = article[1]
 
-                    article = line.split(":::::")
-                    #print(article[0])
+                        if line not in seen:
+                            seen[line] = 1
 
-                    category.articles.append(line)
-            file.close()
+                            if len(line.split()) > 1:
+                                total_articles += 1
+                                newArticle = ArticleCrawled(heading = heading, text = heading + ' ' + text, link = None, signature = [], shingles = [])
+                                category.articles.append(newArticle)
+
+                        seen[line] += 1
+                file.close()
+            except Exception as e:
+                print("ERROR")
     print ("Total Articles: " + str(total_articles))
+    #print(seen)
 
 
 #trim out dataset
 def CleanData():
-    #remove duplicate articles
-    total_articles = 0
-    for category in categories:
-        withDupes = len(category.articles)
-        category.articles = list(set(category.articles))
-        removed = withDupes - len(category.articles)
-
-        print("%s # of dupes: %s" % (category.name, removed))
-
-        total_articles += len(category.articles)
-    print ("Total Articles with removed duplicates: " + str(total_articles))
-    print ('\n')
-
     cachedStopWords = stopwords.words("english")
     for category in categories:
         newList = []
         i = 0
         while i < len(category.articles):
-            heading = category.articles[i].split(":::::")[0]
+            category.articles[i].text = category.articles[i].text.lower()
 
-            category.articles[i] = category.articles[i].lower()
+            #remove header divider
+            category.articles[i].text = re.sub(":::::", ' ', category.articles[i].text)   
+
+            #remove bad phrases
+            for phrase in removephrases:
+                category.articles[i].text = re.sub(phrase, '', category.articles[i].text)   
 
             #remove easy punctation
-            category.articles[i] = re.sub(r"[,.;@#?!&$-]+\ *", " ", category.articles[i])   
+            category.articles[i].text = re.sub(r"[,.;@#?!&$-]+\ *", " ", category.articles[i].text)   
 
             #remove punctuation
-            category.articles[i] = "".join(l for l in category.articles[i] if l not in string.punctuation)   
+            category.articles[i].text = "".join(l for l in category.articles[i].text if l not in string.punctuation)   
 
-            category.articles[i] = re.sub('\s+',' ',category.articles[i])
+            category.articles[i].text = re.sub('\s+',' ',category.articles[i].text)
 
             #remove stop words
-            text = ' '.join([word for word in category.articles[i].split() if word not in cachedStopWords])
+            text = ' '.join([word for word in category.articles[i].text.split() if word not in cachedStopWords])
 
-            text = heading + " ::::: " + text
-
-            category.articles[i] = text
+            category.articles[i].text = text
 
             i += 1
 
@@ -256,18 +279,13 @@ maxShingleID = 2**32-1
 iterations = 30
 
 def pickRandomCoeffs(k):
-  # Create a list of 'k' random values.
   randList = []
   
   while k > 0:
-    # Get a random shingle ID.
     randIndex = random.randint(0, maxShingleID) 
-  
-    # Ensure that each random number is unique.
     while randIndex in randList:
       randIndex = random.randint(0, maxShingleID) 
     
-    # Add the random number to the list.
     randList.append(randIndex)
     k = k - 1
     
@@ -275,68 +293,70 @@ def pickRandomCoeffs(k):
 
 coeffA = pickRandomCoeffs(numHashes)
 coeffB = pickRandomCoeffs(numHashes)
-print("random done")
 
-def characteristicMatrix():
-    kvp = []
+def getShingles():
+    #for now let's only use a limited set of articles
+    for category in categories:
+        random.shuffle(category.articles)
+        category.articles = category.articles[:100]
+
     for category in categories:
         for article in category.articles:
-            split = article.split(":::::")
-            heading = split[0]
-            text = split[1]
+            text = article.text
+            heading = article.heading
             text = text.split()
+            print (text)
             text = list(set(text))
             hashlist = []
             for word in text:
                 crc = hash(word)
                 hashlist.append(crc)
-            kvp.append((heading, hashlist))
-    return kvp
+            article.shingles = hashlist
 
-def minHash(kvp):
-    signatures = []
+def minHash():
+    for category in categories:
+        for article in category.articles:
 
-    print(len(kvp))
-    for doc in kvp:
-        shingleIDSet = doc[1]
-        signature = []
-        
-        for i in range(0, numHashes):
-            minHashCode = nextPrime + 1
+            shingleIDSet = article.shingles
             
-            for shingleID in shingleIDSet:
-                hashCode = (coeffA[i] * shingleID + coeffB[i]) % nextPrime 
-                hashCode = hashCode / nextPrime
+            for i in range(0, numHashes):
+                minHashCode = nextPrime + 1
                 
-                if hashCode < minHashCode:
-                    minHashCode = hashCode
+                for shingleID in shingleIDSet:
+                    hashCode = (coeffA[i] * shingleID + coeffB[i]) % nextPrime 
+                    #hashCode = hashCode / nextPrime
+                    
+                    if hashCode < minHashCode:
+                        minHashCode = hashCode
 
-            signature.append(minHashCode)    
+                article.signature.append(minHashCode)    
 
-        signatures.append((doc[0], signature))  
-
-    return signatures
-
-def jacdist(x, c):
+def jaccardSim(x, c):
     same = 0
     total = 0
-    unique = []
 
     for i in range(0, numHashes):
         if x[i] == c[i]:
             same += 1
-        unique.append(x[i])
-        unique.append(c[i])
     
-    unique = set(unique)
-    unique = list(unique)
-    total = len(unique)
-    dist = 1.0 - (float(same) / float(total))
-    print(dist)
-    return dist
+    sim = (same * 1.0) / (numHashes * 1.0)
+    return sim
 
+getShingles()
+minHash()
 
-kvp = characteristicMatrix()
-signatures = minHash(kvp)
+for category in categories:
+    print(category.name)
+    count = len(category.articles)
+    ranks = []
+    for i in range(0, count - 1):
+        for j in range(i + 1, count):
+            js = jaccardSim(category.articles[i].signature, category.articles[j].signature)
+            rank = (js, category.articles[i].heading, category.articles[j].heading)
+            ranks.append(rank)
+    ranks = sorted(ranks, key=lambda x: -x[0])
+    ranks = ranks[:20]
+    for rank in ranks:
+        print(rank)
+    print('\n\n\n')
 
-print(signatures[::10])
