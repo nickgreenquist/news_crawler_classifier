@@ -51,6 +51,7 @@ x_train_articles = []
 y_train_tags = []
 
 def ReadDataSet():
+    print("Reading in data from files")
     total_sentences = 0
     data_dir = os.getcwd() + '/data'
     if len(sys.argv) > 1:
@@ -93,12 +94,12 @@ def ReadDataSet():
                 file.close()
             except Exception as e:
                 print("ERROR")
-    print ("Total Articles: " + str(total_articles))
-    #print(seen)
+    print ("Total Articles read: " + str(total_articles))
 
 
 #trim out dataset
 def CleanData():
+    print("Cleaning data")
     cachedStopWords = stopwords.words("english")
     for category in categories:
         newList = []
@@ -127,6 +128,7 @@ def CleanData():
             category.articles[i].text = text
 
             i += 1
+    print("Finished cleaning data")
 
 def PrepareTestAndTrain():
     #shuffle arrays
@@ -136,13 +138,18 @@ def PrepareTestAndTrain():
     #find train and test sets for each category
     for category in categories:
         c_length = len(category.articles)
-        category.train = category.articles[: int(.8 *c_length)]
-        category.test = category.articles[int(.8 *c_length):c_length]
+        train = category.articles[: int(.8 *c_length)]
+        for article in train:
+            category.train.append(article.text)
+
+        test = category.articles[int(.8 *c_length):c_length]
+        for article in test:
+            category.test.append(article.text)
 
     #Find train articles from 80% of the articles per category
     for category in categories:
-        for tok in category.train:
-            x_train_articles.append(tok)
+        for article in category.train:
+            x_train_articles.append(article)
             y_train_tags.append([category.name])
     X_train = np.array(x_train_articles)
     return X_train
@@ -180,7 +187,7 @@ def OneVsOne(X_train):
             if "business" in category.name.lower():
                 for i in range(0, len(predicted)):
                     if "business" not in predicted[i].lower():
-                        print("%s: %s" % (predicted[i], X_test[i].split(":::::")[0]))
+                        print("%s: %s" % (predicted[i], X_test[i]))
 
         except:
             print(category.name + ": ERROR")
@@ -260,20 +267,12 @@ def SupervisedLearning():
     NaiveBayes(X_train)
     SVM(X_train)
 
-ReadDataSet()
-CleanData()
-
-#SupervisedLearning()
 
 
 
+'''-------------------------------------------------------Unsupervised Learning---------------------------------------------------'''
 
-'''-------------------------------------------------------------------'''
-
-
-
-#Unsupervised Learning
-numHashes = 100
+numHashes = 500
 nextPrime = 4294967311
 maxShingleID = 2**32-1
 iterations = 30
@@ -284,17 +283,13 @@ def pickRandomCoeffs(k):
   while k > 0:
     randIndex = random.randint(0, maxShingleID) 
     while randIndex in randList:
-      randIndex = random.randint(0, maxShingleID) 
-    
+      randIndex = random.randint(0, maxShingleID)  
     randList.append(randIndex)
-    k = k - 1
-    
+    k = k - 1   
   return randList
 
-coeffA = pickRandomCoeffs(numHashes)
-coeffB = pickRandomCoeffs(numHashes)
-
 def getShingles():
+    print("Generating shingle set for each article")
     #for now let's only use a limited set of articles
     for category in categories:
         random.shuffle(category.articles)
@@ -305,15 +300,16 @@ def getShingles():
             text = article.text
             heading = article.heading
             text = text.split()
-            print (text)
             text = list(set(text))
             hashlist = []
             for word in text:
                 crc = hash(word)
                 hashlist.append(crc)
             article.shingles = hashlist
+    print("Finished generating shingle sets")
 
 def minHash():
+    print("Generating signatures using minhash")
     for category in categories:
         for article in category.articles:
 
@@ -330,6 +326,7 @@ def minHash():
                         minHashCode = hashCode
 
                 article.signature.append(minHashCode)    
+    print("Finished with minhash")
 
 def jaccardSim(x, c):
     same = 0
@@ -342,9 +339,15 @@ def jaccardSim(x, c):
     sim = (same * 1.0) / (numHashes * 1.0)
     return sim
 
+'''#generate random coefficients for minhash functions
+coeffA = pickRandomCoeffs(numHashes)
+coeffB = pickRandomCoeffs(numHashes)
+
+#represent documents as sets of shingles and then minhash them
 getShingles()
 minHash()
 
+#let's see which documents are closest
 for category in categories:
     print(category.name)
     count = len(category.articles)
@@ -358,5 +361,11 @@ for category in categories:
     ranks = ranks[:20]
     for rank in ranks:
         print(rank)
-    print('\n\n\n')
+    print('\n\n\n')'''
+
+
+ReadDataSet()
+CleanData()
+
+SupervisedLearning()
 
