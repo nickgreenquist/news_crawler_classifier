@@ -285,47 +285,6 @@ count = 50
 for i in range(k):
     signaturesWithClusters[i] = random.sample(signaturesWithClusters[i], count)
 
-'''file = open("results/jaccard.txt", "w")
-for z in range(k):
-    for y in range(z, k):
-        print("z:%s, y:%s" % (z,y))
-        averageScore = 0
-        totalScores = 0
-        x = 0
-        j = 0
-        for _ in range(0, 49):
-            sig1 = signaturesWithClusters[z][j]
-            sig2 = signaturesWithClusters[y][j + 1]
-            sig1mh = sig1[2]
-            sig2mh = sig2[2]
-            words = []
-            for w in sig1mh:
-                words.append(w)
-            for w in sig2mh:
-                words.append(w)
-            words = set(words)
-            words = list(words)
-            total = len(words)
-
-            same = 0
-            for i in range(0, len(sig1mh)):
-                if sig1mh[i] == sig2mh[i]:
-                    same += 1
-            jaccard = 1 - (same / total)
-
-            totalScores += jaccard
-
-            file.write("%s" % (jaccard))
-            #file.write("%s: cluster=%s:%s vs cluster=%s:%s " % (jaccard, sig1[0], sig1[1], sig2[0], sig2[1]))
-            file.write('\n')
-            x += 1
-            j += 2
-
-        averageScore = totalScores / x
-        file.write("AverageScore%sv%s: %s" % (z, y,averageScore))
-        file.write('\n')
-file.close()'''
-
 file = open("results/jaccard.txt", "w")
 averages = []
 for z in range(k):

@@ -10,6 +10,8 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import SGDClassifier
 from nltk.corpus import stopwords
 import string
+import math
+from math import sqrt
 import random
 import sys
 import os
@@ -90,7 +92,7 @@ def ReadDataSet():
                         if line not in seen:
                             seen.add(line)
 
-                            minArticleLength = 1
+                            minArticleLength = 100
                             if len(line.split()) > minArticleLength:
                                 total_articles += 1
                                 newArticle = ArticleCrawled(heading = heading, text = heading + ' ' + text, link = None, signature = [], shingles = [])
@@ -227,14 +229,13 @@ def SupervisedLearning():
 
 '''-------------------------------------------------------Unsupervised Learning---------------------------------------------------'''
 
-numHashes = 500
+numHashes = 100
 nextPrime = 4294967311
 maxShingleID = 2**32-1
 iterations = 30
 
 def pickRandomCoeffs(k):
   randList = []
-  
   while k > 0:
     randIndex = random.randint(0, maxShingleID) 
     while randIndex in randList:
@@ -245,10 +246,6 @@ def pickRandomCoeffs(k):
 
 def getShingles():
     print("Generating shingle set for each article")
-    #for now let's only use a limited set of articles
-    for category in categories:
-        random.shuffle(category.articles)
-        category.articles = category.articles[:100]
 
     for category in categories:
         for article in category.articles:
@@ -263,64 +260,238 @@ def getShingles():
             article.shingles = hashlist
     print("Finished generating shingle sets")
 
-def minHash():
+def minHash(coeffA, coeffB):
     print("Generating signatures using minhash")
     for category in categories:
         for article in category.articles:
-
-            shingleIDSet = article.shingles
-            
+            shingleIDSet = article.shingles          
             for i in range(0, numHashes):
-                minHashCode = nextPrime + 1
-                
+                minHashCode = nextPrime + 1           
                 for shingleID in shingleIDSet:
-                    hashCode = (coeffA[i] * shingleID + coeffB[i]) % nextPrime 
-                    #hashCode = hashCode / nextPrime
-                    
+                    hashCode = (coeffA[i] * shingleID + coeffB[i]) % nextPrime               
                     if hashCode < minHashCode:
                         minHashCode = hashCode
-
                 article.signature.append(minHashCode)    
     print("Finished with minhash")
 
 def jaccardSim(x, c):
     same = 0
-    total = 0
-
     for i in range(0, numHashes):
         if x[i] == c[i]:
-            same += 1
+            same += 1   
+    return  (same * 1.0) / (numHashes * 1.0)
+
+def dist(x, c):
+    sqdist = 0.
+    i = 0
+    for v in x:
+        sqdist += (v - c[i]) ** 2
+        i += 1
+    return sqrt(sqdist)
+
+def calcmean(clusterMembers):
+    c = [0.] * numHashes
+    n = 0
+    for sig in clusterMembers:
+        i = 0
+        for v in sig[1]:
+            c[i] += v
+            i += 1
+        n += 1
+    for i in range(0, numHashes):
+        if n < 1:
+            c[i] = c[i]
+        else:
+            c[i] /= n
+    return c
+
+def kmeans(signatures, k):
+    # Set random vectors as the centers
+    centers = []
+
+    '''centersFromSig = random.sample(signatures, k)
+    for i in range(k):
+        centers.append(centersFromSig[i][1])'''
+
+    #set a center from a random article in each category
+    for i in range(0, k):
+        index = i % len(categories)
+        randomcenter = random.sample(categories[index].articles, 1)
+        centers.append(randomcenter[0].signature)
+
+    cluster = [None] * len(signatures)
+
+    for _ in range(0, iterations):
+        i = 0
+        for sig in signatures:
+            cluster[i] = (sig[0], min(range(k), key=lambda j: dist(sig[1], centers[j])))
+            i += 1
+        j = 0
+        for c in enumerate(centers):
+            clusterMembers = (x for i, x in enumerate(signatures) if cluster[i][1] == j)
+            temp = calcmean(clusterMembers)
+            centers[j] = temp
+            j += 1
+    return cluster, centers
+
+def calculateOptimalK(signatures):
+    for k in range(1, 10 + 1):
+        kmeansReturn  = kmeans(signatures, k)
+        centers = kmeansReturn[1]
+        cluster_ind = kmeansReturn[0]
+
+        clusters = []
+        for i in range(k):
+            clusters.append([])
+        for c in cluster_ind:
+            clusters[c[1]].append(c[0])
+
+        signaturesWithClusters = {}
+        for i in range(k):
+            signaturesWithClusters[i] = []
+
+        sse = 0
+        for i in range(k):
+            #mean = mean(centr)
+            for doc in clusters[i]:
+                #print("%s,%s" % (i, doc))
+                datapoints = []
+                for s in signatures:
+                    if s[0] == doc:
+                        datapoints = s[1]
+                
+                clusterNum = i
+                sig = datapoints
+                heading = doc
+                signaturesWithClusters[i].append( (clusterNum, heading, sig) )
+                
+                y = 0
+                for datapoint in datapoints:  
+                    mean = centers[i][y]
+                    sse += math.pow(datapoint - mean, 2)
+                    y += 1
+        print(str(sse) + ',')
+
+
+def UnsupervisedLearning():
+    #generate random coefficients for minhash functions
+    coeffA = pickRandomCoeffs(numHashes)
+    coeffB = pickRandomCoeffs(numHashes)
+
+    #represent documents as sets of shingles and then minhash them
+    getShingles()
+    minHash(coeffA, coeffB)
+
+    signatures = []
+    for category in categories:
+        for article in category.articles:
+            kvp = (article.heading, article.signature)
+            signatures.append(kvp)
     
-    sim = (same * 1.0) / (numHashes * 1.0)
-    return sim
+    #calculateOptimalK(signatures)
 
-'''#generate random coefficients for minhash functions
-coeffA = pickRandomCoeffs(numHashes)
-coeffB = pickRandomCoeffs(numHashes)
+    #using elbow plots, 6 is best number of clusters
+    k = 6
+    kmeansReturn  = kmeans(signatures, k)
+    centers = kmeansReturn[1]
+    cluster_ind = kmeansReturn[0]
 
-#represent documents as sets of shingles and then minhash them
-getShingles()
-minHash()
+    clusters = []
+    for i in range(k):
+        clusters.append([])
+    for c in cluster_ind:
+        clusters[c[1]].append(c[0])
 
-#let's see which documents are closest
-for category in categories:
-    print(category.name)
-    count = len(category.articles)
-    ranks = []
-    for i in range(0, count - 1):
-        for j in range(i + 1, count):
-            js = jaccardSim(category.articles[i].signature, category.articles[j].signature)
-            rank = (js, category.articles[i].heading, category.articles[j].heading)
-            ranks.append(rank)
-    ranks = sorted(ranks, key=lambda x: -x[0])
-    ranks = ranks[:20]
-    for rank in ranks:
-        print(rank)
-    print('\n\n\n')'''
+    file = open("results/cluster.txt", "w")
+    i = 0
+    for c in cluster_ind:
+        try:
+            file.write("%s,%s" % (cluster_ind[i][1], cluster_ind[i][0]))
+            file.write('\n')
+        except:
+            file.write("ERROR")
+        i += 1
+    file.close()
+
+    signaturesWithClusters = {}
+    for i in range(k):
+        signaturesWithClusters[i] = []
+
+    sse = 0
+    for i in range(k):
+        #mean = mean(centr)
+        for doc in clusters[i]:
+            #print("%s,%s" % (i, doc))
+            datapoints = []
+            for s in signatures:
+                if s[0] == doc:
+                    datapoints = s[1]
+            
+            clusterNum = i
+            sig = datapoints
+            heading = doc
+            signaturesWithClusters[i].append( (clusterNum, heading, sig) )
+            
+            y = 0
+            for datapoint in datapoints:  
+                mean = centers[i][y]
+                sse += math.pow(datapoint - mean, 2)
+                y += 1
+    print(str(sse) + ',')
 
 
+    '''COMPUTE JACCARD DISTANCES'''
+    count = 30
+    for i in range(k):
+        signaturesWithClusters[i] = random.sample(signaturesWithClusters[i], count)
+
+    file = open("results/jaccard.txt", "w")
+    averages = []
+    for z in range(k):
+        for y in range(z, k):
+            print("z:%s, y:%s" % (z,y))
+            averageScore = 0
+            totalScores = 0
+            x = 0
+            for j in range(0, len(signaturesWithClusters[z])):
+                r = 0
+                if z == y: #same cluster vs itself
+                    r = j + 1
+                for n in range(r, len(signaturesWithClusters[y])):
+                    sig1 = signaturesWithClusters[z][j]
+                    sig2 = signaturesWithClusters[y][n]
+                    if sig1[1] != sig2[1]:
+                        sig1mh = sig1[2]
+                        sig2mh = sig2[2]
+
+                        same = 0
+                        for i in range(0, len(sig1mh)):
+                            if sig1mh[i] == sig2mh[i]:
+                                same += 1
+                        jaccard = 1.0 - ((1.0 * same) / numHashes)
+
+                        totalScores += jaccard
+
+                        file.write("%s: cluster=%s:%s vs cluster=%s:%s " % (jaccard, sig1[0], sig1[1], sig2[0], sig2[1]))
+                        file.write('\n')
+
+                        x += 1
+            averageScore = totalScores / x
+            averages.append(averageScore)
+            file.write("AverageScore%sv%s: %s" % (z, y,averageScore))
+            file.write('\n')
+    i = 0
+    for z in range(k):
+        for y in range(z, k):
+            file.write("AverageScore%sv%s: %s" % (z, y, averages[i]))
+            file.write('\n')
+            i += 1
+    file.close()
+
+'''-------------------------------------------------------------------driver---------------------------------------------------------'''
 ReadDataSet()
 CleanData()
 
-SupervisedLearning()
+#SupervisedLearning()
+UnsupervisedLearning()
 
