@@ -4,7 +4,10 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.svm import LinearSVC
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.multiclass import OneVsRestClassifier, OneVsOneClassifier
-from sklearn.preprocessing import MultiLabelBinarizer
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.linear_model import SGDClassifier
 from nltk.corpus import stopwords
 import string
 import random
@@ -38,17 +41,19 @@ class ArticleCrawled():
         self.shingles = shingles
 
 class Category():
-    def __init__(self, name, links, token_list, articles, test, train):
+    def __init__(self, name, links, token_list, articles, test, test_articles, test_categories, train):
         self.name = name
         self.links = links
         self.token_list = token_list #a token is a sentence
         self.test = test
+        self.test_articles = test_articles
+        self.test_categories = test_categories
         self.train = train
         self.articles = articles
 
 categories = []
-x_train_articles = []
-y_train_tags = []
+train_articles = []
+train_categories = []
 
 def ReadDataSet():
     print("Reading in data from files")
@@ -65,12 +70,12 @@ def ReadDataSet():
                     if category.name == filename.split('.')[0]:
                         category_exists = True
                 if not category_exists:
-                    new_category = Category(name = filename.split('.')[0], links = [], token_list = [], articles = [], train = [], test = [])
+                    new_category = Category(name = filename.split('.')[0], links = [], token_list = [], articles = [], train = [], test = [], test_articles = [], test_categories = [])
                     categories.append(new_category)
 
     #read articles into category articles
     total_articles = 0
-    seen = {}
+    seen = set()
     for category in categories:
         for dirname in os.listdir(data_dir):
             try:
@@ -83,14 +88,13 @@ def ReadDataSet():
                         text = article[1]
 
                         if line not in seen:
-                            seen[line] = 1
+                            seen.add(line)
 
-                            if len(line.split()) > 1:
+                            minArticleLength = 1
+                            if len(line.split()) > minArticleLength:
                                 total_articles += 1
                                 newArticle = ArticleCrawled(heading = heading, text = heading + ' ' + text, link = None, signature = [], shingles = [])
                                 category.articles.append(newArticle)
-
-                        seen[line] += 1
                 file.close()
             except Exception as e:
                 print("ERROR")
@@ -120,12 +124,11 @@ def CleanData():
             #remove punctuation
             category.articles[i].text = "".join(l for l in category.articles[i].text if l not in string.punctuation)   
 
-            category.articles[i].text = re.sub('\s+',' ',category.articles[i].text)
-
             #remove stop words
-            text = ' '.join([word for word in category.articles[i].text.split() if word not in cachedStopWords])
+            category.articles[i].text = ' '.join([word for word in category.articles[i].text.split() if word not in cachedStopWords])
 
-            category.articles[i].text = text
+            #finally condense whitespace
+            category.articles[i].text = re.sub('\s+',' ',category.articles[i].text)
 
             i += 1
     print("Finished cleaning data")
@@ -138,134 +141,86 @@ def PrepareTestAndTrain():
     #find train and test sets for each category
     for category in categories:
         c_length = len(category.articles)
-        train = category.articles[: int(.8 *c_length)]
-        for article in train:
-            category.train.append(article.text)
+        category.train = category.articles[: int(.8 *c_length)]
+        category.test = category.articles[int(.8 *c_length):c_length]
+        for article in category.test:
+            category.test_articles.append(article.text)
+            category.test_categories.append([category.name])
 
-        test = category.articles[int(.8 *c_length):c_length]
-        for article in test:
-            category.test.append(article.text)
-
-    #Find train articles from 80% of the articles per category
+    #extract train articles into array
     for category in categories:
         for article in category.train:
-            x_train_articles.append(article)
-            y_train_tags.append([category.name])
-    X_train = np.array(x_train_articles)
-    return X_train
+            train_articles.append(article.text)
+            train_categories.append([category.name])
 
 '''---------------------------------------------OneVsOneClassifier--------------------------------------'''
-def OneVsOne(X_train):
+def OneVsOne():
     print ("Results for OneVsOneClassifier")
     classifier = Pipeline([
         ('vectorizer', CountVectorizer()),
         ('tfidf', TfidfTransformer()),
         ('clf', OneVsOneClassifier(LinearSVC()))])
-    Y = np.array(y_train_tags)
-    classifier.fit(X_train, Y.ravel())
+    Y_train = np.array(train_categories)
+    X_train = np.array(train_articles)
+    classifier.fit(X_train, Y_train.ravel())
 
-    #Find test articles from 20% of the articles list per category
-    target_names = []
     for category in categories:
-        try:
-            #grab test articles for this category
-            target_names.append(category.name)
-            c_length = len(category.articles)
-            test_articles = []
-            Y_test = []
-            for tok in category.test:
-                test_articles.append(tok)
-                Y_test.append([category.name])
+        X_test = np.array(category.test_articles)
+        predicted = classifier.predict(X_test)
+        print (category.name + ": " + str(np.mean(predicted == np.array(category.test_categories))))
 
-            #classify test articles   
-            X_test = np.array(test_articles)
-            predicted = classifier.predict(X_test)
-
-            #results
-            print (category.name + ": " + str(np.mean(predicted == np.array(Y_test))))
-
-            if "business" in category.name.lower():
-                for i in range(0, len(predicted)):
-                    if "business" not in predicted[i].lower():
-                        print("%s: %s" % (predicted[i], X_test[i]))
-
-        except:
-            print(category.name + ": ERROR")
+        #see why business has bad results
+        '''if "politics" in category.name.lower():
+            for i in range(0, len(predicted)):
+                if "politics" not in predicted[i].lower():
+                    print("%s: %s" % (predicted[i], category.test[i].heading))'''
     print('\n')
 
-    '''s = ""
-    while s != 'q':
-        s = input()
-        r = classifier.predict([s])
-        print("%s: %s" % (s, r))'''
-
 '''-------------------------------------------Naives Bayes----------------------------------------------------'''
-def NaiveBayes(X_train):
+def NaiveBayes():
     print ("Results for Naive Bayes")
-    from sklearn.feature_extraction.text import CountVectorizer
+    Y_train = np.array(train_categories)
+    X_train = np.array(train_articles)
+
     count_vect = CountVectorizer()
     X_train_counts = count_vect.fit_transform(X_train)
-
-    from sklearn.feature_extraction.text import TfidfTransformer
     tf_transformer = TfidfTransformer(use_idf=False).fit(X_train_counts)
     X_train_tf = tf_transformer.transform(X_train_counts)
-
     tfidf_transformer = TfidfTransformer()
     X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
-
-    from sklearn.naive_bayes import MultinomialNB
-    Y = np.array(y_train_tags)
-    clf = MultinomialNB().fit(X_train_tfidf, Y.ravel())
+    classifier = MultinomialNB().fit(X_train_tfidf, Y_train.ravel())
 
     for category in categories:
-        c_length = len(category.articles)
-        test_articles = []
-        Y_test = []
-        for tok in category.test:
-                test_articles.append(tok)
-                Y_test.append([category.name])
-
-
-        X_new_counts = count_vect.transform(test_articles)
+        X_new_counts = count_vect.transform(category.test_articles)
         X_new_tfidf = tfidf_transformer.transform(X_new_counts)
 
-        predicted = clf.predict(X_new_tfidf)
-
-        #results
-        print (category.name + ": " + str(np.mean(predicted == np.array(Y_test))))
+        predicted = classifier.predict(X_new_tfidf)
+        print (category.name + ": " + str(np.mean(predicted == np.array(category.test_categories))))
     print ('\n')
 
 '''-------------------------------------------Support Vector Machine----------------------------------------------------'''
-def SVM(X_train):
+def SVM():
     print ("Results for Support Vector Machine")
-    from sklearn.linear_model import SGDClassifier
-    text_clf = Pipeline([('vect', CountVectorizer()),
+    classifier = Pipeline([('vect', CountVectorizer()),
         ('tfidf', TfidfTransformer()),
         ('clf', SGDClassifier(loss='hinge', penalty='l2',
             alpha=1e-3, random_state=42,
             max_iter=5, tol=None)),
     ])
-    Y = np.array(y_train_tags)
-    text_clf.fit(X_train, Y.ravel())  
+    Y_train = np.array(train_categories)
+    X_train = np.array(train_articles)
+    classifier.fit(X_train, Y_train.ravel())  
 
     for category in categories:
-        c_length = len(category.articles)
-        test_articles = []
-        Y_test = []
-        for tok in category.test:
-                test_articles.append(tok)
-                Y_test.append([category.name])
-
-        predicted = text_clf.predict(test_articles)
-        
-        #results
-        print (category.name + ": " + str(np.mean(predicted == np.array(Y_test))))
+        predicted = classifier.predict(category.test_articles)
+        print (category.name + ": " + str(np.mean(predicted == np.array(category.test_categories))))
+    print ('\n')
 
 def SupervisedLearning():
-    X_train = PrepareTestAndTrain()
-    OneVsOne(X_train)
-    NaiveBayes(X_train)
-    SVM(X_train)
+    PrepareTestAndTrain()
+    OneVsOne()
+    NaiveBayes()
+    SVM()
 
 
 
