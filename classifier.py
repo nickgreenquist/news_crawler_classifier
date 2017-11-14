@@ -3,11 +3,13 @@ from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.svm import LinearSVC
 from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.multiclass import OneVsRestClassifier, OneVsOneClassifier
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import SGDClassifier
+from sklearn.cluster import KMeans
 from nltk.corpus import stopwords
 import string
 import math
@@ -309,10 +311,6 @@ def kmeans(signatures, k):
     # Set random vectors as the centers
     centers = []
 
-    '''centersFromSig = random.sample(signatures, k)
-    for i in range(k):
-        centers.append(centersFromSig[i][1])'''
-
     #set a center from a random article in each category
     for i in range(0, k):
         index = i % len(categories)
@@ -488,10 +486,29 @@ def UnsupervisedLearning():
             i += 1
     file.close()
 
+def KmeansSKL():
+    articles = []
+    for category in categories:
+        for article in category.articles:
+            articles.append(article.text)
+    vectorizer = TfidfVectorizer(stop_words='english')
+    X = vectorizer.fit_transform(articles)
+    true_k = 7
+    model = KMeans(n_clusters=6, random_state=0, max_iter=100).fit(X)
+
+    i = 0
+    for category in categories:
+        start = i
+        for article in category.articles:
+            i += 1
+        end = i
+        print("%s: %s" % (category.name, model.labels_[start:end]))
+
 '''-------------------------------------------------------------------driver---------------------------------------------------------'''
 ReadDataSet()
 CleanData()
 
 #SupervisedLearning()
-UnsupervisedLearning()
+#UnsupervisedLearning()
+KmeansSKL()
 
