@@ -1,0 +1,14 @@
+http://feeds.reuters.com/Reuters/PoliticsNews
+http://rss.cnn.com/rss/cnn_allpolitics.rss
+http://abcnews.go.com/abcnews/politicsheadlines
+https://www.cnbc.com/id/10000113/device/rss/rss.html
+https://www.nbcnewyork.com/news/politics/?rss=y&embedThumb=y&summary=y
+http://rss.nytimes.com/services/xml/rss/nyt/Politics.xml
+http://feeds.washingtonpost.com/rss/politics
+http://feeds.skynews.com/feeds/rss/politics.xml
+https://www.politico.com/rss/congress.xml
+http://thehill.com/rss/syndicator/19110
+http://feeds.feedburner.com/timeblogs/swampland
+https://www.newsmax.com/rss/Politics/1/
+http://feeds.foxnews.com/foxnews/politics
+https://www.washingtontimes.com/rss/headlines/news/politics/

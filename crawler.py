@@ -44,7 +44,8 @@ categories = []
 rss_links = []
 
 def loadLinks():
-    data_dir = os.getcwd() + '/links'
+    #data_dir = os.getcwd() + '/links'
+    data_dir = os.getcwd() + '/links_politics'
     if len(sys.argv) > 1:
         data_dir = os.getcwd() + '/' + sys.argv[1]
     for filename in os.listdir(data_dir):
