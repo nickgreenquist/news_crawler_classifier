@@ -20,7 +20,6 @@ import os
 import re
 import collections
 from nltk.stem.wordnet import WordNetLemmatizer
-from stemming.porter2 import stem
 lmtzr = WordNetLemmatizer()
 
 removephrases = [
@@ -83,7 +82,8 @@ def ReadDataSet():
     for category in categories:
         for dirname in os.listdir(data_dir):
             try:
-                file = open((data_dir + "/" + dirname + "/" + category.name + ".txt"),"r") 
+                filename = data_dir + "/" + dirname + "/" + category.name + ".txt"
+                file = open((filename),"r") 
                 for line in file: 
                     #must contain letters and be longer than 5 characters long
                     if any(c.isalpha()for c in line) and len(line) > 5:
@@ -101,7 +101,7 @@ def ReadDataSet():
                                 category.articles.append(newArticle)
                 file.close()
             except Exception as e:
-                print("ERROR")
+                print(e)
     print ("Total Articles read: " + str(total_articles))
 
 
